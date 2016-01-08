@@ -98,35 +98,32 @@ int main( int argc, char* argv[] ) {
       systemType = IRIDIUM;
   }
   
-  cout << "[JobSetup]\tCode is running on system: " << systemMap[systemType] << endl;
+  cout << "[JobSetup]\tCode is running on system: " << systemMap[systemType] 
+  << endl;
+  
+  string pathToExtend = "";
   
   if (systemType == CERN){
-    inputFilePath = gSystem->ExpandPathName
-    ("/afs/cern.ch/work/o/oviazlo/Wprime/AnalysisFramework/rel20/data");
+    pathToExtend = "/afs/cern.ch/work/o/oviazlo/Wprime/"
+                         "AnalysisFramework/rel20/data";
   }
   else if (systemType == ALARIK){
-    string pathToExtend = "/lunarc/nobackup/users/oviazlo/xAOD/";
-    if(vm.count("sampleTag"))
-      pathToExtend += vm["sampleTag"].as<std::string>();
-    else
-      pathToExtend += "cutFlow";
-    inputFilePath = gSystem->ExpandPathName(pathToExtend.c_str());
-    if ( vm.count("debug") )
-      cout << "[DEBUG]\tSearch for samples in folder: " << pathToExtend 
-      << endl;
-    
+    pathToExtend = "/lunarc/nobackup/users/oviazlo/xAOD/";
   }
   else if (systemType == IRIDIUM){
     if (strSamplePattert.find("data")!=std::string::npos)
-      inputFilePath = gSystem->ExpandPathName
-      ("/nfs/shared/pp/oviazlo/xAOD/directDriverTesting");
+      pathToExtend = "/nfs/shared/pp/oviazlo/xAOD/";
     else
-      inputFilePath = gSystem->ExpandPathName
-      ("/nfs/shared/pp/oviazlo/xAOD/directDriverTesting");
-//       ("/nfs/shared/pp/oviazlo/xAOD/cutFlow"); 
-//       ("/nfs/shared/pp/oviazlo/xAOD/testSH");
+      pathToExtend = "/nfs/shared/pp/oviazlo/xAOD/";
   }
 
+  if(vm.count("sampleTag"))
+    pathToExtend += vm["sampleTag"].as<std::string>();
+  else
+    pathToExtend += "cutFlow";
+  
+  inputFilePath = gSystem->ExpandPathName(pathToExtend.c_str());
+  
   cout << "[JobSetup]\tLooking for a sample pattern: " << strSamplePattert 
   << endl << endl;
   
