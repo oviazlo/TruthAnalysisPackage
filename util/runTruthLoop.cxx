@@ -82,7 +82,7 @@ int main( int argc, char* argv[] ) {
   hostNameChArr = getenv("HOSTNAME");
   string hostName(hostNameChArr);
   
-  std::string strSamplePattert = "mc15*Wmintau*";
+  std::string strSamplePattert = "mc15*";
   if ( vm.count("samplePattern") ){
     strSamplePattert = vm["samplePattern"].as<std::string>();
   }
@@ -105,7 +105,7 @@ int main( int argc, char* argv[] ) {
   
   if (systemType == CERN){
     pathToExtend = "/afs/cern.ch/work/o/oviazlo/Wprime/"
-                         "AnalysisFramework/rel20/data";
+                         "AnalysisFramework/rel20/data/";
   }
   else if (systemType == ALARIK){
     pathToExtend = "/lunarc/nobackup/users/oviazlo/xAOD/";
