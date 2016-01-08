@@ -111,6 +111,9 @@ int main( int argc, char* argv[] ) {
     else
       pathToExtend += "cutFlow";
     inputFilePath = gSystem->ExpandPathName(pathToExtend.c_str());
+    if ( vm.count("debug") )
+      cout << "[DEBUG]\tSearch for samples in folder: " << pathToExtend 
+      << endl;
     
   }
   else if (systemType == IRIDIUM){
@@ -124,28 +127,29 @@ int main( int argc, char* argv[] ) {
 //       ("/nfs/shared/pp/oviazlo/xAOD/testSH");
   }
 
-  cout << "[JobSetup]\tLooking for a sample pattern: " << strSamplePattert << endl << endl;
+  cout << "[JobSetup]\tLooking for a sample pattern: " << strSamplePattert 
+  << endl << endl;
   
   SH::ScanDir()
   .samplePattern (strSamplePattert)
   .scan (sh, inputFilePath);
 
-/// Print what we found:
-//   sh.print(); FIXME
-  
   if ( vm.count("mergeSamples") ){
     string sampleMergePattern;
     if (strSamplePattert.find("data")!=std::string::npos)
       sampleMergePattern = "data15_13TeV.*";
     else
       sampleMergePattern = "mc15_13TeV.*";
-    cout << "[JobSetup]\tMake attampt of merging sample with pattern: " << sampleMergePattern << 
-    " to one sample with name: " << vm["mergeSamples"].as<std::string>() << endl;
-    SH::mergeSamples (sh, vm["mergeSamples"].as<std::string>(), sampleMergePattern); 
+    cout << "[JobSetup]\tMake attampt of merging sample with pattern: " 
+    << sampleMergePattern <<     " to one sample with name: " 
+    << vm["mergeSamples"].as<std::string>() << endl;
+    SH::mergeSamples (sh, vm["mergeSamples"].as<std::string>(), 
+                      sampleMergePattern); 
   }
   
   /// Print what we found:
-//   sh.print(); FIXME
+  if ( vm.count("debug") )
+    sh.print();
   
   /// Set the name of the input TTree. It's always "CollectionTree"
   /// for xAOD files.
@@ -283,6 +287,7 @@ int parseOptionsWithBoost(po::variables_map &vm, int argc, char* argv[]){
       ("samplePattern", po::value<string>(),"specify Sample Pattern")
       ("sampleTag,t", po::value<string>(),"specify Sample tag to use")
       ("nEvents,n", po::value<unsigned int>(), "number of events to proceed")
+      ("debug,d", "enable debug mode")
       ;
     try 
     { 
