@@ -105,8 +105,13 @@ int main( int argc, char* argv[] ) {
     ("/afs/cern.ch/work/o/oviazlo/Wprime/AnalysisFramework/rel20/data");
   }
   else if (systemType == ALARIK){
-    inputFilePath = gSystem->ExpandPathName
-    ("/lunarc/nobackup/users/oviazlo/xAOD/cutFlow");
+    string pathToExtend = "/lunarc/nobackup/users/oviazlo/xAOD/";
+    if(vm.count("sampleTag"))
+      pathToExtend += vm["sampleTag"].as<std::string>();
+    else
+      pathToExtend += "cutFlow";
+    inputFilePath = gSystem->ExpandPathName(pathToExtend.c_str());
+    
   }
   else if (systemType == IRIDIUM){
     if (strSamplePattert.find("data")!=std::string::npos)
@@ -276,6 +281,7 @@ int parseOptionsWithBoost(po::variables_map &vm, int argc, char* argv[]){
       ("info", "set message level to INFO") 
       ("mergeSamples", po::value<string>(),"merge everything in one sample; specify final sample name")
       ("samplePattern", po::value<string>(),"specify Sample Pattern")
+      ("sampleTag,t", po::value<string>(),"specify Sample tag to use")
       ("nEvents,n", po::value<unsigned int>(), "number of events to proceed")
       ;
     try 
