@@ -193,13 +193,15 @@ int main( int argc, char* argv[] ) {
   ///   alg->m_myMegaFlag = true;
   ///
   /// [List of possble flags to use]
-  /// bool m_useHistObjectDumper; - do not make default plots by HistObjectDumper
+  /// bool m_useHistObjectDumper; - do not make default plots by 
+  ///                                           HistObjectDumper
   /// bool m_useBitsetCutflow; - do not save cutflow
   /// bool m_useCalibrationAndSmearingTool; - don't do muon calibration and 
-  ///                                         smearing TODO not in the code now?
+  ///                                         smearing TODO not in the code 
+  ///                                         now?
   /// bool m_runElectronChannel; - run electron cycle instead of muon one
-  /// bool m_doWprimeTruthMatching; - do truth matching to identify Wprime decay 
-  ///                                 to muon/electron channel
+  /// bool m_doWprimeTruthMatching; - do truth matching to identify Wprime 
+  ///                                 decay to muon/electron channel
   /// bool m_doNotApplyTriggerCuts; - do not apply triggers in MC
   /// string outputName; - name of output tree TODO not implemented yet
   
@@ -248,11 +250,13 @@ int main( int argc, char* argv[] ) {
     else if (systemType == CERN){
       slurmSystemDependentOptions = "-L /bin/bash -q 1nh";
       driver->shellInit = "export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/"
-      "repo/ATLASLocalRootBase && source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh";
+      "repo/ATLASLocalRootBase && source ${ATLAS_LOCAL_ROOT_BASE}/user/"
+      "atlasLocalSetup.sh";
     }
     
     job.options()->setBool(EL::Job::optResetShell, false);
-    job.options()->setString(EL::Job::optSubmitFlags, slurmSystemDependentOptions);
+    job.options()->setString(EL::Job::optSubmitFlags, 
+                             slurmSystemDependentOptions);
     driver->submit(job, submitDir);
     
   }
@@ -280,7 +284,8 @@ int parseOptionsWithBoost(po::variables_map &vm, int argc, char* argv[]){
       ("overwrite,o", "overwrite output folder") 
       ("directDriver", "run with DirectDriver") 
       ("info", "set message level to INFO") 
-      ("mergeSamples", po::value<string>(),"merge everything in one sample; specify final sample name")
+      ("mergeSamples", po::value<string>(),"merge everything in one sample; "
+      "specify final sample name")
       ("samplePattern", po::value<string>(),"specify Sample Pattern")
       ("sampleTag,t", po::value<string>(),"specify Sample tag to use")
       ("nEvents,n", po::value<unsigned int>(), "number of events to proceed")
