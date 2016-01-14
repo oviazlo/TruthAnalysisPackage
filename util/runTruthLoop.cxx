@@ -1,10 +1,11 @@
+/// EventLoop/xAOD headers
 #include "xAODRootAccess/Init.h"
-
 #include "EventLoop/Job.h"
 #include "EventLoop/ProofDriver.h"
 #include "EventLoop/DirectDriver.h"
 #include "EventLoop/LSFDriver.h"
-
+#include <EventLoopAlgs/NTupleSvc.h>
+#include <EventLoop/OutputStream.h>
 #include "SampleHandler/DiskListLocal.h"
 #include "SampleHandler/ToolsSplit.h"
 #include "SampleHandler/SampleHandler.h"
@@ -13,12 +14,8 @@
 #include "SampleHandler/Sample.h"
 #include <SampleHandler/ToolsJoin.h>
 
+/// ROOT
 #include <TSystem.h>
-
-#include "TruthAnalysis/TruthAlgorithm.h"
-
-#include <EventLoopAlgs/NTupleSvc.h>
-#include <EventLoop/OutputStream.h>
 
 /// boost
 #include "boost/program_options.hpp"
@@ -26,6 +23,11 @@
 #include "boost/filesystem.hpp"
 #include "boost/assign.hpp" /// map_list_of
 
+/// private
+#include "TruthAnalysis/TruthAlgorithm.h"
+#include "defaultConfigurations.h"
+
+/// C/C++ 
 #include <stdlib.h>     /* getenv */
 #include <map>
 
@@ -58,9 +60,11 @@ int main( int argc, char* argv[] ) {
   if (returnedMessage!=SUCCESS) std::exit(returnedMessage);
 
   /// Take the submit directory from the input if provided:
-  std::string submitDir = "submitDir";
+  std::string submitDir = configMap["submitDir"];
   if ( vm.count("folder") ){
-    submitDir = vm["folder"].as<std::string>();  
+    submitDir = vm["folder"].as<std::string>();
+    if (submitDir.find("submitDirs/")==std::string::npos)
+      submitDir = "submitDirs/" + submitDir;
   }
 
   int nEvents = -1;
@@ -82,7 +86,7 @@ int main( int argc, char* argv[] ) {
   hostNameChArr = getenv("HOSTNAME");
   string hostName(hostNameChArr);
   
-  std::string strSamplePattert = "mc15*Wmintau*";
+  std::string strSamplePattert = configMap["strSamplePattert"];
   if ( vm.count("samplePattern") ){
     strSamplePattert = vm["samplePattern"].as<std::string>();
   }
@@ -98,28 +102,32 @@ int main( int argc, char* argv[] ) {
       systemType = IRIDIUM;
   }
   
-  cout << "[JobSetup]\tCode is running on system: " << systemMap[systemType] << endl;
+  cout << "[JobSetup]\tCode is running on system: " << systemMap[systemType] 
+  << endl;
+  
+  string pathToExtend = "";
   
   if (systemType == CERN){
-    inputFilePath = gSystem->ExpandPathName
-    ("/afs/cern.ch/work/o/oviazlo/Wprime/AnalysisFramework/rel20/data");
+    pathToExtend = configMap["pathToExtend_CERN"];
   }
   else if (systemType == ALARIK){
-    inputFilePath = gSystem->ExpandPathName
-    ("/lunarc/nobackup/users/oviazlo/xAOD/cutFlow");
+    pathToExtend = configMap["pathToExtend_ALARIK"];
   }
   else if (systemType == IRIDIUM){
-    if (strSamplePattert.find("data")!=std::string::npos)
-      inputFilePath = gSystem->ExpandPathName
-      ("/nfs/shared/pp/oviazlo/xAOD/directDriverTesting");
-    else
-      inputFilePath = gSystem->ExpandPathName
-      ("/nfs/shared/pp/oviazlo/xAOD/directDriverTesting");
-//       ("/nfs/shared/pp/oviazlo/xAOD/cutFlow"); 
-//       ("/nfs/shared/pp/oviazlo/xAOD/testSH");
+    pathToExtend = configMap["pathToExtend_IRIDIUM"];
   }
 
-  cout << "[JobSetup]\tLooking for a sample pattern: " << strSamplePattert << endl << endl;
+  if(vm.count("sampleTag"))
+    pathToExtend += vm["sampleTag"].as<std::string>();
+  else
+    pathToExtend += "cutFlow";
+  
+  inputFilePath = gSystem->ExpandPathName(pathToExtend.c_str());
+
+  cout << "[JobSetup]\tLooking for a data in folder: " << pathToExtend 
+  << endl;
+  cout << "[JobSetup]\tLooking for a sample pattern: " << strSamplePattert 
+  << endl << endl;
   
   SH::ScanDir()
   .samplePattern (strSamplePattert)
@@ -134,9 +142,11 @@ int main( int argc, char* argv[] ) {
       sampleMergePattern = "data15_13TeV.*";
     else
       sampleMergePattern = "mc15_13TeV.*";
-    cout << "[JobSetup]\tMake attampt of merging sample with pattern: " << sampleMergePattern << 
-    " to one sample with name: " << vm["mergeSamples"].as<std::string>() << endl;
-    SH::mergeSamples (sh, vm["mergeSamples"].as<std::string>(), sampleMergePattern); 
+    cout << "[JobSetup]\tMake attampt of merging sample with pattern: " 
+    << sampleMergePattern << " to one sample with name: " 
+    << vm["mergeSamples"].as<std::string>() << endl;
+    SH::mergeSamples (sh, vm["mergeSamples"].as<std::string>(), 
+                      sampleMergePattern); 
   }
   
   /// Print what we found:
@@ -187,13 +197,15 @@ int main( int argc, char* argv[] ) {
   ///   alg->m_myMegaFlag = true;
   ///
   /// [List of possble flags to use]
-  /// bool m_useHistObjectDumper; - do not make default plots by HistObjectDumper
+  /// bool m_useHistObjectDumper; - do not make default plots by 
+  ///                                           HistObjectDumper
   /// bool m_useBitsetCutflow; - do not save cutflow
   /// bool m_useCalibrationAndSmearingTool; - don't do muon calibration and 
-  ///                                         smearing TODO not in the code now?
+  ///                                         smearing TODO not in the code 
+  ///                                         now?
   /// bool m_runElectronChannel; - run electron cycle instead of muon one
-  /// bool m_doWprimeTruthMatching; - do truth matching to identify Wprime decay 
-  ///                                 to muon/electron channel
+  /// bool m_doWprimeTruthMatching; - do truth matching to identify Wprime 
+  ///                                 decay to muon/electron channel
   /// bool m_doNotApplyTriggerCuts; - do not apply triggers in MC
   /// string outputName; - name of output tree TODO not implemented yet
   
@@ -207,8 +219,8 @@ int main( int argc, char* argv[] ) {
     }
   }
   
-  if (vm.count("info"))
-    alg->setMsgLevel (MSG::INFO);
+//   if (vm.count("info"))
+//     alg->setMsgLevel (MSG::INFO);
     
   if ( vm.count("proofDriver") ){/// Run the job using the local/direct driver:
     EL::ProofDriver driver;
@@ -242,11 +254,13 @@ int main( int argc, char* argv[] ) {
     else if (systemType == CERN){
       slurmSystemDependentOptions = "-L /bin/bash -q 1nh";
       driver->shellInit = "export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/"
-      "repo/ATLASLocalRootBase && source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh";
+      "repo/ATLASLocalRootBase && source ${ATLAS_LOCAL_ROOT_BASE}/user/"
+      "atlasLocalSetup.sh";
     }
     
     job.options()->setBool(EL::Job::optResetShell, false);
-    job.options()->setString(EL::Job::optSubmitFlags, slurmSystemDependentOptions);
+    job.options()->setString(EL::Job::optSubmitFlags, 
+                             slurmSystemDependentOptions);
     driver->submit(job, submitDir);
     
   }
@@ -270,12 +284,13 @@ int parseOptionsWithBoost(po::variables_map &vm, int argc, char* argv[]){
       ("nWorkers,w", po::value<unsigned int>(), "number of workers")
       ("nFilesPerJob", po::value<unsigned int>(), "number of files per job")
       ("nEventsPerJob", po::value<unsigned int>(), "number of events per job")
-      ("proofDriver,p", "run with ProofDriver - PROOF-Lite mode") 
+      ("proofDriver", "run with ProofDriver - PROOF-Lite mode") 
       ("overwrite,o", "overwrite output folder") 
       ("directDriver", "run with DirectDriver") 
       ("info", "set message level to INFO") 
-      ("mergeSamples", po::value<string>(),"merge everything in one sample; specify final sample name")
-      ("samplePattern", po::value<string>(),"specify Sample Pattern")
+      ("mergeSamples,m", po::value<string>(),"merge everything in one sample; "
+      "specify final sample name")
+      ("samplePattern,p", po::value<string>(),"specify Sample Pattern")
       ("nEvents,n", po::value<unsigned int>(), "number of events to proceed")
       ;
     try 

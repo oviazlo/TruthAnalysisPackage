@@ -203,12 +203,47 @@ EL::StatusCode TruthAlgorithm :: execute ()
   }
   
   */
+  const xAOD::TruthVertexContainer* truthVertices = 0;
+  /// retrieve arguments: container type, container key
+  if ( m_event->retrieve( truthVertices, "truthVertices" ).isSuccess() ){
+  EL_RETURN_CHECK("retrieve truthVertices", 
+                  m_event->retrieve( truthVertices, "truthVertices" ));
   
   
-  /// Create truth vertice container
-  const xAOD::TruthParticleContainer* TruthParticles = 0;
-  EL_RETURN_CHECK("retrieve TruthParticles", 
-                  m_event->retrieve( TruthParticles, "TruthParticles" ));
+  unsigned int pdg = 13; /// muons;
+  bool foundmuon = false; 
+
+  /// Start iterating over truth container
+  xAOD::TruthVertexContainer::const_iterator truthV_itr; 
+  const xAOD::TruthParticle* particle;
+  for (truthV_itr = truthVertices->begin(); truthV_itr != truthVertices->end();
+        ++truthV_itr ) {
+    int nout = 0;
+    for (unsigned int iOut=0; iOut < (*truthV_itr)->nOutgoingParticles(); 
+          iOut++) {
+      nout +=1;
+      particle = (*truthV_itr)->outgoingParticle(iOut);
+      if (particle && TMath::Abs(particle->pdgId())==pdg) {
+        particleid = particle->pdgId();
+        status = particle->status();
+        cout << "found ooutgoing particle: " << nout<< "pdg " << 
+         particle->pdgId()<< ", " << particle->pt()<<endl;
+        for (unsigned int iIn=0; iIn < (*truthV_itr)->nIncomingParticles(); 
+             iIn++) {
+          cout << "mother " << 
+           TMath::Abs((*truthV_itr)->incomingParticle(iIn)->pdgId())<< endl;
+          motherid = (*truthV_itr)->incomingParticle(iIn)->pdgId();
+        }
+ 
+
+      }
+      
+    }
+  }
+  
+  
+  /*
+  
   
   TVector3 MET(0,0,0);
   xAOD::TruthParticleContainer::const_iterator truth; 
@@ -250,7 +285,7 @@ EL::StatusCode TruthAlgorithm :: execute ()
       highestMt = Mt_MET;
     }
     
-  }
+  }*/
   
   /// get MC weights
   if (isMC){
