@@ -253,7 +253,7 @@ EL::StatusCode TruthAlgorithm :: execute ()
     Int_t PDG_ID = abs((*truth)->pdgId());
     Int_t Status = (*truth)->status();
 
-    if (Status != 3) continue; /// hard process particles only
+//     if (Status != 3) continue; /// hard process particles only
     if (PDG_ID!=12 && PDG_ID!=14 && PDG_ID!=16) continue; /// neutrinos
 
     MET += ((*truth)->p4()).Vect();
@@ -268,7 +268,7 @@ EL::StatusCode TruthAlgorithm :: execute ()
     Int_t PDG_ID = abs((*truth)->pdgId());
     Int_t Status = (*truth)->status();
 
-    if (Status != 3) continue; /// hard process particles only
+//     if (Status != 3) continue; /// hard process particles only
     if (PDG_ID!=11 && PDG_ID!=13 && PDG_ID!=15) continue; /// leptons
 
     TVector3 leptonVec = ((*truth)->p4()).Vect();

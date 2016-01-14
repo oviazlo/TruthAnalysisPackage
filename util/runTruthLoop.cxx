@@ -133,9 +133,6 @@ int main( int argc, char* argv[] ) {
   .samplePattern (strSamplePattert)
   .scan (sh, inputFilePath);
 
-/// Print what we found:
-//   sh.print(); FIXME
-  
   if ( vm.count("mergeSamples") ){
     string sampleMergePattern;
     if (strSamplePattert.find("data")!=std::string::npos)
@@ -150,7 +147,8 @@ int main( int argc, char* argv[] ) {
   }
   
   /// Print what we found:
-//   sh.print(); FIXME
+  if ( vm.count("debug") )
+    sh.print();
   
   /// Set the name of the input TTree. It's always "CollectionTree"
   /// for xAOD files.
@@ -292,6 +290,7 @@ int parseOptionsWithBoost(po::variables_map &vm, int argc, char* argv[]){
       "specify final sample name")
       ("samplePattern,p", po::value<string>(),"specify Sample Pattern")
       ("nEvents,n", po::value<unsigned int>(), "number of events to proceed")
+      ("debug,d", "enable debug mode")
       ;
     try 
     { 
