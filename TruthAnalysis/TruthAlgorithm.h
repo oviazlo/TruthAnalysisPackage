@@ -24,6 +24,7 @@
 #include "xAODRootAccess/TEvent.h"
 #include "xAODRootAccess/tools/Message.h"
 
+
 /// std c++
 #include <iostream>
 
@@ -33,6 +34,7 @@
 /// private
 #include <TruthAnalysis/WprimeHist.h>
 #include <TruthAnalysis/WprimeSample.h>
+#include <TruthAnalysis/BitsetCutflow.h>
 
 /// Helper macro for checking xAOD::TReturnCode return values
 #define EL_RETURN_CHECK( CONTEXT, EXP )                     \
@@ -65,6 +67,7 @@ public:
   TH1D* hMu_pt_off; //!
   TH1D* hMu_mt_off; //!
   TH1D* hMu_MET_Muons_off; //!
+  TH1D* hMu_invMass_Muons_off; //!
   
   /// EventInfo
   TH1D* h_event_crossSectionWeight; //!
@@ -75,18 +78,23 @@ public:
   xAOD::TEvent *m_event;  //!
   xAOD::TStore *m_store;  //!
 
-  int EventNumber; //!
+  int m_EventNumber; //!
+  unsigned int m_pdgIdOfMother; //!
+  unsigned int m_leptonPdgId; //!
+  float m_weighfilterEfficiency; //!
+  float m_weightkFactor; //!
+  float m_weightCrossSection; //!
+  bool m_isMC; //!
+  bool m_cut120GeVForInclusiveW; //!
   
-  float weighfilterEfficiency; //!
-  float weightkFactor; //!
-  float weightCrossSection; //!
-  
-  Double_t GeV = 0.001; //!
+  ///external options: should go w/o "double slash !" statement!!!
+  bool m_runElectronChannel;
   
   #ifndef __CINT__
 
   LPXKfactorTool* m_LPXKfactorTool; //!
-  const xAOD::EventInfo* eventInfo = 0; //!
+  const xAOD::EventInfo* m_eventInfo = 0; //!
+  BitsetCutflow* m_BitsetCutflow; //!    
     
   #endif /// not __CINT__
   
@@ -103,6 +111,9 @@ public:
   virtual EL::StatusCode postExecute ();
   virtual EL::StatusCode finalize ();
   virtual EL::StatusCode histFinalize ();
+  
+  /// custom functions
+  void fillHist (TVector3 MET, TVector3 leptonVec);
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(TruthAlgorithm, 1);

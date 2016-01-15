@@ -13,6 +13,8 @@
 #include <SampleHandler/ScanDir.h>
 #include "SampleHandler/Sample.h"
 #include <SampleHandler/ToolsJoin.h>
+#include <AsgTools/MsgStream.h>
+#include <AsgTools/MsgStreamMacros.h>
 
 /// ROOT
 #include <TSystem.h>
@@ -186,7 +188,9 @@ int main( int argc, char* argv[] ) {
     
   /// Add our analysis to the job:
   TruthAlgorithm* alg = new TruthAlgorithm();
+  cout << "[runTruthLoop]\tcreate alg" << endl;
   job.algsAdd( alg );
+  cout << "[runTruthLoop]\tadd alg to job" << endl;
   
   /// all configuration to the algorithm should be passed after attachment to 
   /// the job (practically after this comment)
@@ -195,18 +199,11 @@ int main( int argc, char* argv[] ) {
   ///   alg->m_myMegaFlag = true;
   ///
   /// [List of possble flags to use]
-  /// bool m_useHistObjectDumper; - do not make default plots by 
-  ///                                           HistObjectDumper
-  /// bool m_useBitsetCutflow; - do not save cutflow
-  /// bool m_useCalibrationAndSmearingTool; - don't do muon calibration and 
-  ///                                         smearing TODO not in the code 
-  ///                                         now?
   /// bool m_runElectronChannel; - run electron cycle instead of muon one
-  /// bool m_doWprimeTruthMatching; - do truth matching to identify Wprime 
-  ///                                 decay to muon/electron channel
-  /// bool m_doNotApplyTriggerCuts; - do not apply triggers in MC
-  /// string outputName; - name of output tree TODO not implemented yet
-  
+
+  if (vm.count("electronChannel")){
+    alg->m_runElectronChannel = true;
+  }
   
   /// overwrite output folder
   if (vm.count("overwrite")){
@@ -290,6 +287,8 @@ int parseOptionsWithBoost(po::variables_map &vm, int argc, char* argv[]){
       "specify final sample name")
       ("samplePattern,p", po::value<string>(),"specify Sample Pattern")
       ("nEvents,n", po::value<unsigned int>(), "number of events to proceed")
+      ("sampleTag,t", po::value<string>(),"specify Sample tag to use")
+      ("electronChannel,e", "run over electron channel")
       ("debug,d", "enable debug mode")
       ;
     try 
