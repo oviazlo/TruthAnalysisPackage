@@ -18,6 +18,7 @@ EL::StatusCode TruthAlgorithm :: setupJob (EL::Job& job)
   xAOD::Init( "TruthAlgorithm" ).ignore(); /// call before opening first file
   
   m_runElectronChannel = false;
+  m_debugMode = false;
   
   return EL::StatusCode::SUCCESS;
 }
@@ -37,6 +38,10 @@ EL::StatusCode TruthAlgorithm :: histInitialize ()
   
   hMu_invMass_Muons_off = (TH1D*)WprimeHist::standard("mgen","h","","");
   wk()->addOutput(hMu_invMass_Muons_off); 
+  
+  hMu_invMass_Muons_alternative = (TH1D*)WprimeHist::standard("mgen","hAlt","",
+                                                              "");
+  wk()->addOutput(hMu_invMass_Muons_alternative); 
   
   h_event_crossSectionWeight = (TH1D*)WprimeHist::standard("evtwt_xSec","h","",
                                                            "");
@@ -132,6 +137,8 @@ EL::StatusCode TruthAlgorithm :: initialize ()
     m_leptonPdgId = 13;
   }
   
+  trueWmass = 0.0;
+  
   return EL::StatusCode::SUCCESS;
 }
 
@@ -169,9 +176,23 @@ EL::StatusCode TruthAlgorithm :: execute ()
       unsigned int counter = 0;
       
       stringstream debugStream;
+      double eLepton = 0.0;
+      double eNeutrino = 0.0;
+      
+      const xAOD::TruthParticle* mother;
+      const xAOD::TruthParticle* lepton; 
+      const xAOD::TruthParticle* neutrino;
       
       if (TMath::Abs((*truthV_itr)->incomingParticle(iIn)->pdgId()) == 
         m_pdgIdOfMother) { 
+        
+        trueWmass = 
+        TMath::Sqrt(TMath::Power((*truthV_itr)->incomingParticle(iIn)->e(),2)
+              - TMath::Power((*truthV_itr)->incomingParticle(iIn)->pz(),2)
+              - TMath::Power((*truthV_itr)->incomingParticle(iIn)->py(),2)
+              - TMath::Power((*truthV_itr)->incomingParticle(iIn)->px(),2)); 
+        
+        mother = (*truthV_itr)->incomingParticle(iIn);
         
         for (unsigned int iOut=0; iOut < (*truthV_itr)->nOutgoingParticles(); 
               iOut++) {
@@ -182,30 +203,49 @@ EL::StatusCode TruthAlgorithm :: execute ()
 //             continue;
 
           if (absPdgId==m_leptonPdgId)
-            if (leptonVec.Pt()<(truthParticle->p4()).Vect().Pt())
+            if (leptonVec.Pt()<(truthParticle->p4()).Vect().Pt()){
               leptonVec = (truthParticle->p4()).Vect();
+              eLepton = truthParticle->e();
+              lepton = truthParticle;
+            }
           if (absPdgId==m_leptonPdgId+1)
-            if (MET.Pt()<(truthParticle->p4()).Vect().Pt())
+            if (MET.Pt()<(truthParticle->p4()).Vect().Pt()){
               MET = (truthParticle->p4()).Vect();
+              eNeutrino = truthParticle->e();
+              neutrino = truthParticle;
+            }
           debugStream << "(" << absPdgId << "," << status << "," << 
           (truthParticle->p4()).Vect().Pt()*GEV << ") "; 
           counter++;
         }
         
       }
-      double invMass = sqrt( 2*leptonVec.Mag()*MET.Mag() * 
-                       (1.0 - TMath::Cos( leptonVec.Phi() - MET.Phi())))*GEV;
+//       double invMass = sqrt( 2*leptonVec.Mag()*MET.Mag() * 
+//                        (1.0 - TMath::Cos( leptonVec.Phi() - MET.Phi())))*GEV;
+
+      double invMass = TMath::Sqrt((TMath::Power(eLepton+eNeutrino,2) - 
+                TMath::Power( (leptonVec+MET).Mag() ,2)))*GEV;
+      
+
                        
-//       if (counter>=2)
-//         cout << "[DEBUG]\t" << m_EventNumber << ": " << 
-// //         (*truthV_itr)->incomingParticle(iIn)->pdgId() << " --> " << 
-//         debugStream.str() << " --> " << invMass << endl;
+      if (counter>=2 && m_debugMode)
+        cout << "[DEBUG]\t" << m_EventNumber << ": " << 
+        (*truthV_itr)->incomingParticle(iIn)->pdgId() << " --> " << 
+        debugStream.str() << " --> " << invMass << endl;
+      
+      
                        
       if (MET.Pt()>0 && leptonVec.Pt()>0 && 
           ((!m_cut120GeVForInclusiveW) || invMass<120.0) ){
-//         cout << "[DEBUG]\tinvMass = " << invMass << endl;
-        fillHist(MET,leptonVec);
+        fillHist(MET,leptonVec,trueWmass);
+        fillHist(mother,lepton,neutrino);
         m_BitsetCutflow->FillCutflow("found pair");
+        
+//           cout << "[DEBUG]\t" << m_EventNumber << ": " << invMass << 
+//           " (calc.inv.mass)" << endl;
+//           cout << "[DEBUG]\t" << m_EventNumber << ": " << trueWmass*GEV << 
+//           " (trueWmass)" << endl;
+        
       }
     }
   }
@@ -268,12 +308,75 @@ EL::StatusCode TruthAlgorithm :: finalize ()
     m_BitsetCutflow = 0;
   }
   
-  cout << "[INFO]\t\tm_weightCrossSection = " << m_weightCrossSection << endl;
+  cout << "[INFO]\t\tm_weightCrossSection = " << m_weightCrossSection 
+  << " nb" << endl;
   
   return EL::StatusCode::SUCCESS;
 }
 
-void TruthAlgorithm :: fillHist (TVector3 MET, TVector3 leptonVec)
+
+void TruthAlgorithm :: fillHist (const xAOD::TruthParticle* mother, 
+                                 const xAOD::TruthParticle* lepton, 
+                                 const xAOD::TruthParticle* neutrino)
+{
+  
+  TVector3 leptonVec = (lepton->p4()).Vect();
+  TVector3 neutrinoVec = (neutrino->p4()).Vect();
+  
+  double trueWmass = 
+        TMath::Sqrt(TMath::Power(mother->e(),2)
+              - TMath::Power(mother->pz(),2)
+              - TMath::Power(mother->py(),2)
+              - TMath::Power(mother->px(),2))*GEV;
+  
+  double leptonEt = TMath::Sqrt(TMath::Power(leptonVec.Pt(),2) + 
+                                TMath::Power(lepton->m(),2));
+        
+  double neutrinoEt = TMath::Sqrt(TMath::Power(neutrinoVec.Pt(),2) + 
+                                TMath::Power(neutrino->m(),2));
+              
+  cout << "lepton->m() = " << lepton->m()*GEV << "; neutrino->m() = " <<
+  neutrino->m()*GEV << endl;
+  
+  cout << "leptonEt = " << leptonEt*GEV << "; leptonVec.Pt() = " << 
+  leptonVec.Pt()*GEV << endl;
+  
+  cout << "neutrinoEt = " << neutrinoEt*GEV << "; neutrinoVec.Pt() = " 
+  << neutrinoVec.Pt()*GEV << endl;
+    
+  double calculatedTrueWmass_v1 = 
+        TMath::Sqrt((TMath::Power(lepton->e()+neutrino->e(),2) -
+                    TMath::Power( (leptonVec+neutrinoVec).Mag() ,2)))*GEV;
+  
+  double calculatedTrueWmass_v2 = 
+        TMath::Sqrt( 2*leptonVec.Mag()*neutrinoVec.Mag() * 
+          (1.0 - TMath::Cos( leptonVec.Angle(neutrinoVec) ) ) )*GEV;
+  
+  double trueMt = 
+        TMath::Sqrt(TMath::Power(leptonEt+neutrinoEt,2) -
+                    TMath::Power((leptonVec+neutrinoVec).Pt(),2)
+                    )*GEV;
+  
+                    
+  double calculatedTrueMt_v1 = TMath::Sqrt(2*leptonEt*neutrinoEt*
+                      (1-TMath::Cos(leptonVec.Phi()-neutrinoVec.Phi())))*GEV;
+                      
+  double calculatedTrueMt_v2 = TMath::Sqrt(2*leptonVec.Pt()*neutrinoVec.Pt()*
+                      (1-TMath::Cos(leptonVec.Phi()-neutrinoVec.Phi())))*GEV;
+ 
+  cout << "trueWmass_v0: " << trueWmass << endl;
+  cout << "trueWmass_v1: " << calculatedTrueWmass_v1 << endl;
+  cout << "trueWmass_v2: " << calculatedTrueWmass_v2 << endl;
+  
+  cout << "TrueMt_v0: " << trueMt << endl;
+  cout << "TrueMt_v1: " << calculatedTrueMt_v1 << endl;
+  cout << "TrueMt_v2: " << calculatedTrueMt_v2 << endl;
+  cout << endl;
+                      
+}
+
+void TruthAlgorithm :: fillHist (TVector3 MET, TVector3 leptonVec, 
+                                 double containerInvMass)
 {
 
   double Mt_MET = sqrt( 2*leptonVec.Pt()*MET.Pt() * 
@@ -306,6 +409,8 @@ void TruthAlgorithm :: fillHist (TVector3 MET, TVector3 leptonVec)
   hMu_mt_off->Fill(Mt_MET*GEV,totalWeight);
   hMu_MET_Muons_off->Fill(MET.Pt()*GEV,totalWeight);
   hMu_invMass_Muons_off->Fill(invMass*GEV,totalWeight);
+  
+  hMu_invMass_Muons_alternative->Fill(containerInvMass*GEV,totalWeight);
 
 }
 

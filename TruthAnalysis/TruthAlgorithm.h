@@ -68,6 +68,7 @@ public:
   TH1D* hMu_mt_off; //!
   TH1D* hMu_MET_Muons_off; //!
   TH1D* hMu_invMass_Muons_off; //!
+  TH1D* hMu_invMass_Muons_alternative; //!
   
   /// EventInfo
   TH1D* h_event_crossSectionWeight; //!
@@ -86,9 +87,11 @@ public:
   float m_weightCrossSection; //!
   bool m_isMC; //!
   bool m_cut120GeVForInclusiveW; //!
+  double trueWmass; //!
   
   ///external options: should go w/o "double slash !" statement!!!
   bool m_runElectronChannel;
+  bool m_debugMode;
   
   #ifndef __CINT__
 
@@ -113,7 +116,10 @@ public:
   virtual EL::StatusCode histFinalize ();
   
   /// custom functions
-  void fillHist (TVector3 MET, TVector3 leptonVec);
+  void fillHist (TVector3 MET, TVector3 leptonVec, double containerInvMass);
+  void fillHist (const xAOD::TruthParticle* mother, 
+                                   const xAOD::TruthParticle* lepton, 
+                                   const xAOD::TruthParticle* neutrino);
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(TruthAlgorithm, 1);

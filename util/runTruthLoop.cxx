@@ -148,10 +148,6 @@ int main( int argc, char* argv[] ) {
                       sampleMergePattern); 
   }
   
-  /// Print what we found:
-  if ( vm.count("debug") )
-    sh.print();
-  
   /// Set the name of the input TTree. It's always "CollectionTree"
   /// for xAOD files.
   sh.setMetaString( "nc_tree", "CollectionTree" );
@@ -188,9 +184,7 @@ int main( int argc, char* argv[] ) {
     
   /// Add our analysis to the job:
   TruthAlgorithm* alg = new TruthAlgorithm();
-  cout << "[runTruthLoop]\tcreate alg" << endl;
   job.algsAdd( alg );
-  cout << "[runTruthLoop]\tadd alg to job" << endl;
   
   /// all configuration to the algorithm should be passed after attachment to 
   /// the job (practically after this comment)
@@ -204,6 +198,9 @@ int main( int argc, char* argv[] ) {
   if (vm.count("electronChannel")){
     alg->m_runElectronChannel = true;
   }
+  
+  if ( vm.count("debug") )
+    alg->m_debugMode = true;
   
   /// overwrite output folder
   if (vm.count("overwrite")){
