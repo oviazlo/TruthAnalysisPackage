@@ -12,4 +12,7 @@
 #ifdef __CINT__
 #pragma link C++ class TruthAlgorithm+;
 #pragma link C++ class BitsetCutflow+;
+#pragma link C++ class WprimeHist+;
+#pragma link C++ class WprimeSample+;
+#pragma link C++ class TruthHelper+;
 #endif

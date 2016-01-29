@@ -1,7 +1,7 @@
 #ifndef BitsetCutflow_H
 #define BitsetCutflow_H
 
-#include <TH1I.h>
+#include <TH1I.h> 
 #include <iostream>
 #include <map>
 #include <bitset>
@@ -40,6 +40,7 @@ private:
 	TH1I* m_cutflowHist; //!
 	
 	/// this is needed to distribute the algorithm to the workers
+	/// WARNING works ONLY if includes contain some ROOT header!!!
 	ClassDef(BitsetCutflow, 1);
 
 };

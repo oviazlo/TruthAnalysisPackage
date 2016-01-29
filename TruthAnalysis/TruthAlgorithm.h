@@ -5,6 +5,8 @@
 #include "TMath.h"
 #include <TLorentzVector.h>
 #include <TH1.h>
+#include <TFile.h>
+#include <TTree.h>
 
 /// EventLoop
 #include <EventLoop/Job.h>
@@ -24,7 +26,6 @@
 #include "xAODRootAccess/TEvent.h"
 #include "xAODRootAccess/tools/Message.h"
 
-
 /// std c++
 #include <iostream>
 
@@ -35,6 +36,7 @@
 #include <TruthAnalysis/WprimeHist.h>
 #include <TruthAnalysis/WprimeSample.h>
 #include <TruthAnalysis/BitsetCutflow.h>
+#include <TruthAnalysis/TruthHelper.h>
 
 /// Helper macro for checking xAOD::TReturnCode return values
 #define EL_RETURN_CHECK( CONTEXT, EXP )                     \
@@ -87,7 +89,7 @@ public:
   float m_weightCrossSection; //!
   bool m_isMC; //!
   bool m_cut120GeVForInclusiveW; //!
-  double trueWmass; //!
+  double m_trueWmass; //!
   
   ///external options: should go w/o "double slash !" statement!!!
   bool m_runElectronChannel;
@@ -98,7 +100,11 @@ public:
   LPXKfactorTool* m_LPXKfactorTool; //!
   const xAOD::EventInfo* m_eventInfo = 0; //!
   BitsetCutflow* m_BitsetCutflow; //!    
-    
+  string m_sampleName; //!
+  unsigned int m_datasetID; //!
+  TruthHelper* m_TruthHelper; //!
+  double m_normalizationFactor; //!
+  
   #endif /// not __CINT__
   
   // this is a standard constructor
@@ -117,10 +123,12 @@ public:
   
   /// custom functions
   void fillHist (TVector3 MET, TVector3 leptonVec, double containerInvMass);
-  void fillHist (const xAOD::TruthParticle* mother, 
-                                   const xAOD::TruthParticle* lepton, 
-                                   const xAOD::TruthParticle* neutrino);
-
+  void fillHist (const xAOD::TruthParticle* mother,
+                 const xAOD::TruthParticle* lepton, 
+                 const xAOD::TruthParticle* neutrino);
+  
+  
+  
   // this is needed to distribute the algorithm to the workers
   ClassDef(TruthAlgorithm, 1);
 };
