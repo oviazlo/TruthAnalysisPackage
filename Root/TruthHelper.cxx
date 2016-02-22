@@ -479,6 +479,14 @@ TruthHelper::TruthHelper(){
   m_crossSectionMap[304294] = .0000000973;
   m_crossSectionMap[304258] = .00000016275;
 
+  /// mc14_13TeV DM D5c samples
+  m_nEventsMap[158838] = 39;
+  m_crossSectionMap[158838] = .0004383;
+  m_nEventsMap[158839] = 30;
+  m_crossSectionMap[158839] = .000428;
+  m_nEventsMap[158843] = 40;
+  m_crossSectionMap[158843] = .0000396;
+  
 }
 
 TruthHelper::~TruthHelper(){}

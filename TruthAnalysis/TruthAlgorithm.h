@@ -125,7 +125,10 @@ public:
   void fillHist (TVector3 MET, TVector3 leptonVec, double containerInvMass);
   void fillHist (const xAOD::TruthParticle* mother,
                  const xAOD::TruthParticle* lepton, 
-                 const xAOD::TruthParticle* neutrino);
+                 const xAOD::TruthParticle* neutrino,
+                 const xAOD::TruthParticle* dmPart1,
+                 const xAOD::TruthParticle* dmPart2
+                );
   
   
   

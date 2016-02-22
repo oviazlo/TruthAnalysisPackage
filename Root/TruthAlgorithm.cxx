@@ -1,6 +1,7 @@
 #include <TruthAnalysis/TruthAlgorithm.h>
 
 #define GEV 0.001
+#define PDGID_DM 1000022
 
 /// this is needed to distribute the algorithm to the workers
 ClassImp(TruthAlgorithm)
@@ -136,7 +137,7 @@ EL::StatusCode TruthAlgorithm :: initialize ()
   if (m_isMC){
     m_LPXKfactorTool = new LPXKfactorTool("LPXKfactorTool");
     EL_RETURN_CHECK("m_LPXKfactorTool_isMC15",
-                    m_LPXKfactorTool->setProperty("isMC15", true)); 
+                    m_LPXKfactorTool->setProperty("isMC15", false)); /// FIXME make it back to true
     EL_RETURN_CHECK("m_LPXKfactorTool_applyEWCorr",
                     m_LPXKfactorTool->setProperty("applyEWCorr", true)); 
     EL_RETURN_CHECK("m_LPXKfactorTool_applyPICorr",
@@ -203,20 +204,63 @@ EL::StatusCode TruthAlgorithm :: execute ()
   m_EventNumber = m_eventInfo->eventNumber();  
     
   const xAOD::TruthVertexContainer* truthVertices = 0;
+
+//   EL_RETURN_CHECK("retrieve TruthVertices", 
+//                   m_event->retrieve( truthVertices, "TruthVertices" ));
+  /// FIXME uncomment above, remove below   
   EL_RETURN_CHECK("retrieve TruthVertices", 
-                  m_event->retrieve( truthVertices, "TruthVertices" ));
- 
+                  m_event->retrieve( truthVertices, "TruthVertex" ));
+  
+  
   bool foundPair = false;
   
   /// Start iterating over truth container
   const xAOD::TruthParticle* truthParticle;
   xAOD::TruthVertexContainer::const_iterator truthV_itr; 
+  const xAOD::TruthParticle* dmPart1 = NULL;
+  const xAOD::TruthParticle* dmPart2 = NULL;
   
 //   cout << "[DEBUG]\tm_leptonPdgId = " << m_leptonPdgId << endl;
+  
+//   cout << "m_EventNumber = " << m_EventNumber << endl;
   
   for (truthV_itr = truthVertices->begin(); 
         truthV_itr != truthVertices->end(); ++truthV_itr )
   {
+    for (unsigned int iOut=0; iOut < (*truthV_itr)->nOutgoingParticles(); 
+              iOut++) {
+      truthParticle = (*truthV_itr)->outgoingParticle(iOut);
+      if (!truthParticle)
+        continue;
+      unsigned absPdgId = TMath::Abs(truthParticle->pdgId());
+      int status = truthParticle->status();
+      if (status==1&&absPdgId==PDGID_DM){
+        if (!dmPart1) 
+          dmPart1 = truthParticle;
+        else if (!dmPart2) 
+          dmPart2 = truthParticle;
+        else
+          cout << "[ERROR]\tFound 3rd DM particle!!! Abort!!!" << endl;
+      }
+      
+//       double pt = sqrt(TMath::Power(truthParticle->py(),2)
+//               + TMath::Power(truthParticle->px(),2));
+//       double mass = truthParticle->m();
+// //       if (mass/1000.0>0.9)
+//         cout << "pdg: " << absPdgId << "; status: " << status << "; mass = " <<
+//         mass << "; pt = " << pt << endl;
+    } 
+  }
+  if (!dmPart1 || !dmPart2){
+    cout << "[ERROR]\tCan't find two DM particles! Skip this event!!!" << endl;
+    return EL::StatusCode::SUCCESS;
+  }
+  
+  for (truthV_itr = truthVertices->begin(); 
+        truthV_itr != truthVertices->end(); ++truthV_itr )
+  {
+    
+    /// let's find W/W' daughters
     for (unsigned int iIn=0; iIn < (*truthV_itr)->nIncomingParticles(); 
           iIn++)
     {
@@ -247,10 +291,7 @@ EL::StatusCode TruthAlgorithm :: execute ()
           truthParticle = (*truthV_itr)->outgoingParticle(iOut);
           unsigned absPdgId = TMath::Abs(truthParticle->pdgId());
           int status = truthParticle->status();
-          double massOfParticle = truthParticle->m();
-          if (massOfParticle>200.0)
-            cout << "Pdg: " << absPdgId << "; mass: " << massOfParticle 
-            << endl;
+          
 //           if (status!=3)
 //             continue;
 
@@ -278,7 +319,7 @@ EL::StatusCode TruthAlgorithm :: execute ()
                        
       if (neutrinoVec.Pt()>0 && leptonVec.Pt()>0 && 
           ((!m_cut120GeVForInclusiveW) || m_trueWmass<120.0) ){
-        fillHist(mother,lepton,neutrino);
+        fillHist(mother,lepton,neutrino,dmPart1,dmPart2);
         m_BitsetCutflow->FillCutflow("found pair");
         
       }
@@ -349,11 +390,25 @@ EL::StatusCode TruthAlgorithm :: finalize ()
 
 void TruthAlgorithm :: fillHist (const xAOD::TruthParticle* mother,
                                  const xAOD::TruthParticle* lepton, 
-                                 const xAOD::TruthParticle* neutrino)
+                                 const xAOD::TruthParticle* neutrino,
+                                 const xAOD::TruthParticle* dmPart1,
+                                 const xAOD::TruthParticle* dmPart2
+                                )
 {
   
   TVector3 leptonVec = (lepton->p4()).Vect();
   TVector3 neutrinoVec = (neutrino->p4()).Vect();
+  if (!dmPart1||!dmPart2)
+    cout << "[ERROR]\tCan't find two DM particles!!!" << endl;
+  
+//   cout << "before\tneutrinoVec.Mag() = " << neutrinoVec.Mag() << endl;
+  
+  TVector3 dm1Vec = (dmPart1->p4()).Vect();
+  TVector3 dm2Vec = (dmPart2->p4()).Vect();
+  neutrinoVec += dm1Vec;
+  neutrinoVec += dm2Vec;
+  
+//   cout << "after\tneutrinoVec.Mag() = " << neutrinoVec.Mag() << endl;
   
   double trueWmass = 
         TMath::Sqrt(TMath::Power(mother->e(),2)
