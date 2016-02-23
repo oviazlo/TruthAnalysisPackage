@@ -137,7 +137,7 @@ EL::StatusCode TruthAlgorithm :: initialize ()
   if (m_isMC){
     m_LPXKfactorTool = new LPXKfactorTool("LPXKfactorTool");
     EL_RETURN_CHECK("m_LPXKfactorTool_isMC15",
-                    m_LPXKfactorTool->setProperty("isMC15", false)); /// FIXME make it back to true
+                    m_LPXKfactorTool->setProperty("isMC15", true)); /// FIXME make it back to true
     EL_RETURN_CHECK("m_LPXKfactorTool_applyEWCorr",
                     m_LPXKfactorTool->setProperty("applyEWCorr", true)); 
     EL_RETURN_CHECK("m_LPXKfactorTool_applyPICorr",
@@ -205,11 +205,11 @@ EL::StatusCode TruthAlgorithm :: execute ()
     
   const xAOD::TruthVertexContainer* truthVertices = 0;
 
-//   EL_RETURN_CHECK("retrieve TruthVertices", 
-//                   m_event->retrieve( truthVertices, "TruthVertices" ));
-  /// FIXME uncomment above, remove below   
   EL_RETURN_CHECK("retrieve TruthVertices", 
-                  m_event->retrieve( truthVertices, "TruthVertex" ));
+                  m_event->retrieve( truthVertices, "TruthVertices" ));
+  /// FIXME uncomment above, remove below   
+//   EL_RETURN_CHECK("retrieve TruthVertices", 
+//                   m_event->retrieve( truthVertices, "TruthVertex" ));
   
   
   bool foundPair = false;
@@ -278,6 +278,7 @@ EL::StatusCode TruthAlgorithm :: execute ()
         m_pdgIdOfMother) { 
         
         mother = (*truthV_itr)->incomingParticle(iIn);
+//         cout << "[DEBUG]\tFound W!!!" << endl;
         
         m_trueWmass = 
         TMath::Sqrt(TMath::Power((*truthV_itr)->incomingParticle(iIn)->e(),2)
@@ -308,8 +309,7 @@ EL::StatusCode TruthAlgorithm :: execute ()
           debugStream << "(" << absPdgId << "," << status << "," << 
           (truthParticle->p4()).Vect().Pt()*GEV << ") "; 
           counter++;
-        }
-        
+        } 
       }
 
       if (counter>=2 && m_debugMode)
